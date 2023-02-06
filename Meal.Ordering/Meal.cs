@@ -8,27 +8,30 @@ public class Meal
 {
     private readonly IEventStore _eventStore;
     private readonly string _id;
-    private readonly OrderNumber _orderNumber;
-    private readonly TableNumber _tableNumber;
-    private readonly Serving _serving;
-    private readonly TrackedItem[] _items;
-    private readonly OrderState _state;
-    private readonly PaymentState _paymentState;
-
+    private MealProjectedState _mealProjectedState;
     public MealPublicState MealPublicState => new()
     {
-        OrderNumber = _orderNumber,
-        Payment = _paymentState,
-        Serving = _serving,
-        Table = _tableNumber,
-        State = _state,
-        Items = _items
-            .Select(i => new OrderedItem(i.Count, i.Name, i.Category, i.IsPrepared))
-            .ToArray()
+        State = _mealProjectedState.State,
+        Payment = _mealProjectedState.Payment,
+        OrderNumber = _mealProjectedState.OrderNumber,
+        Serving = _mealProjectedState.Serving,
+        Table = _mealProjectedState.Table,
+        Items = _mealProjectedState.Items
+            .Select(i => new OrderedItem(
+                i.Count,
+                i.Name,
+                i.Category,
+                i.IsPrepared))
+            .ToArray(),
     };
 
-    public Meal(IEventStore eventStore, string id)
+    public Meal(IEventStore eventStore, string id) : this(eventStore, id, new())
     {
+    }
+
+    public Meal(IEventStore eventStore, string id, MealProjectedState state)
+    {
+        _mealProjectedState = state;
         _eventStore = eventStore;
         _id = id;
         foreach (var persistedEvent in eventStore.Events(id))
@@ -36,18 +39,18 @@ public class Meal
             switch (persistedEvent.Event)
             {
                 case MealOrdered mealOrdered:
-                    _orderNumber = mealOrdered.OrderNumber;
-                    _tableNumber = mealOrdered.Table;
-                    _serving = Enum.Parse<Serving>(mealOrdered.Serving);
-                    _items = mealOrdered.Items
+                    _mealProjectedState.OrderNumber = mealOrdered.OrderNumber;
+                    _mealProjectedState.Table = mealOrdered.Table;
+                    _mealProjectedState.Serving = Enum.Parse<Serving>(mealOrdered.Serving);
+                    _mealProjectedState.Items = mealOrdered.Items
                         .Select(i => new TrackedItem(
                             i.Count,
                             i.Name,
                             Enum.Parse<Category>(i.Category)))
                         .ToArray();
 
-                    _state = OrderState.InPreparation;
-                    _paymentState = PaymentState.Waiting;
+                    _mealProjectedState.State = OrderState.InPreparation;
+                    _mealProjectedState.Payment = PaymentState.Waiting;
                     break;
             }
         }
@@ -55,7 +58,7 @@ public class Meal
 
     public void Order(OrderMealCommand command, IOrderNumberGenerator orderNumberGenerator)
     {
-        if (_state != OrderState.None)
+        if (_mealProjectedState.State != OrderState.None)
             throw new InvalidOperationException("Invalid command for state!");
 
         if (command.Serving == Serving.paperbag && !command.Table.IsEmpty)

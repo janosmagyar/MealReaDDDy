@@ -16,7 +16,7 @@ public class OrderSteps
     private IOrderNumberGenerator _orderNumberGenerator;
     private OrderMealCommand? _orderMealCommand;
     private MealProjectedState _startState = new();
-    private Meal CreateNewMealFromStartState() => new(_eventStore, _id); // new(_eventStore, _id, new(_startState));
+    private Meal CreateNewMealFromStartState() => new(_eventStore, _id, new(_startState));
 
     public OrderSteps(
         ExceptionContext exceptionContext,
