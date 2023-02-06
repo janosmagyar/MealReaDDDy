@@ -16,4 +16,11 @@ namespace Meal.Events
         public required string Name { get; init; }
         public required string Category { get; init; }
     }
+
+    public record MealItemPrepared : Event
+    {
+        public required int ItemIndex { get; init; }
+    }
+
+    public record AllMealItemsPrepared : Event;
 }

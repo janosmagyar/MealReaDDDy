@@ -52,6 +52,12 @@ public class Meal
                     _mealProjectedState.State = OrderState.InPreparation;
                     _mealProjectedState.Payment = PaymentState.Waiting;
                     break;
+                case MealItemPrepared mealItemPrepared:
+                    _mealProjectedState.Items[mealItemPrepared.ItemIndex].PrepareOne();
+                    break;
+                case AllMealItemsPrepared allMealItemsPrepared:
+                    _mealProjectedState.State = OrderState.Ready;
+                    break;
             }
         }
     }
@@ -81,7 +87,36 @@ public class Meal
         });
     }
 
-    public void ConfirmItemPrepared(ConfirmMealItemPreparedCommand command){}
+    public void ConfirmItemPrepared(ConfirmMealItemPreparedCommand command)
+    {
+        if (_mealProjectedState.State != OrderState.InPreparation)
+            throw new InvalidOperationException("Invalid command for state!");
+
+        if (_mealProjectedState.Items.Length <= command.ItemIndex)
+            throw new IndexOutOfRangeException("Invalid item index!");
+
+        var item = _mealProjectedState.Items[command.ItemIndex];
+
+        if (item.IsPrepared)
+            throw new InvalidOperationException("This item is already prepared!");
+
+        _eventStore.Save(_id, new[]
+        {
+            new MealItemPrepared
+            {
+                ItemIndex = command.ItemIndex
+            }
+        });
+
+        var allOtherItems = _mealProjectedState.Items.Where((item, i) => i != command.ItemIndex);
+
+        if (allOtherItems.All(i => i.IsPrepared)
+            && item.IsOneMissing)
+            _eventStore.Save(_id, new[]
+            {
+                new AllMealItemsPrepared()
+            });
+    }
 
     public void PaymentFailed() { }
 
