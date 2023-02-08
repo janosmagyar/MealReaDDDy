@@ -10,6 +10,8 @@ public class Meal
     private readonly IEventStore _eventStore;
     private readonly string _id;
     private MealProjectedState _mealProjectedState;
+    private readonly StreamRevision _revision = StreamRevision.NotExists;
+
     public MealPublicState MealPublicState => new()
     {
         State = _mealProjectedState.State,
@@ -36,7 +38,10 @@ public class Meal
         _eventStore = eventStore;
         _id = id;
         foreach (var persistedEvent in eventStore.Events(id))
+        {
             Apply(persistedEvent.Event);
+            _revision = persistedEvent.StreamPosition;
+        }
     }
 
     private void Apply(Event @event) =>
@@ -68,6 +73,6 @@ public class Meal
         MealCommandHandlers.CheckAllowedInState(handler.GetType(), _mealProjectedState.State);
         var eventList = handler.Events(_mealProjectedState).ToList();
         eventList.ForEach(Apply);
-        _eventStore.Save(_id, eventList);
+        _eventStore.Save(_id, _revision, eventList);
     }
 }
