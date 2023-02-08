@@ -41,34 +41,34 @@ public class Meal
         _eventStore = eventStore;
         _id = id;
         foreach (var persistedEvent in eventStore.Events(id))
+            Apply(persistedEvent.Event);
+    }
+
+    private void Apply(Event @event) =>
+        _mealProjectedState = CreateHandler(@event).Apply(_mealProjectedState);
+
+    private IEventHandler CreateHandler(Event @event)
+    {
+        switch (@event)
         {
-            switch (persistedEvent.Event)
-            {
-                case MealOrdered mealOrdered:
-                    _mealProjectedState = new MealOrderedEventHandler(mealOrdered).Apply(_mealProjectedState);
-                    break;
-                case MealItemPrepared mealItemPrepared:
-                    _mealProjectedState = new MealItemPreparedEventHandler(mealItemPrepared).Apply(_mealProjectedState);
-                    break;
-                case AllMealItemsPrepared allMealItemsPrepared:
-                    _mealProjectedState = new AllMealItemsPreparedEventHandler(allMealItemsPrepared).Apply(_mealProjectedState);
-                    break;
-                case PaymentFailed paymentFailed:
-                    _mealProjectedState = new PaymentFailedEventHandler(paymentFailed).Apply(_mealProjectedState);
-                    break;
-                case PaymentSucceeded paymentSucceeded:
-                    _mealProjectedState = new PaymentSucceededEventHandler(paymentSucceeded).Apply(_mealProjectedState);
-                    break;
-                case MealPickedUp mealPickedUp:
-                    _mealProjectedState = new PickedUpEventHandler(mealPickedUp).Apply(_mealProjectedState);
-                    break;
-                case MealServedToTable mealServedToTable:
-                    _mealProjectedState = new ServedTotTableEventHandler(mealServedToTable).Apply(_mealProjectedState);
-                    break;
-                case MealTakenAway mealTakenAway:
-                    _mealProjectedState = new TakenAwayEventHandler(mealTakenAway).Apply(_mealProjectedState);
-                    break;
-            }
+            case MealOrdered mealOrdered:
+                return new MealOrderedEventHandler(mealOrdered);
+            case MealItemPrepared mealItemPrepared:
+                return new MealItemPreparedEventHandler(mealItemPrepared);
+            case AllMealItemsPrepared allMealItemsPrepared:
+                return new AllMealItemsPreparedEventHandler(allMealItemsPrepared);
+            case PaymentFailed paymentFailed:
+                return new PaymentFailedEventHandler(paymentFailed);
+            case PaymentSucceeded paymentSucceeded:
+                return new PaymentSucceededEventHandler(paymentSucceeded);
+            case MealPickedUp mealPickedUp:
+                return new PickedUpEventHandler(mealPickedUp);
+            case MealServedToTable mealServedToTable:
+                return new ServedTotTableEventHandler(mealServedToTable);
+            case MealTakenAway mealTakenAway:
+                return new TakenAwayEventHandler(mealTakenAway);
+            default:
+                throw new ArgumentException($"Unknow event type! ({@event.GetType().FullName})");
         }
     }
 
