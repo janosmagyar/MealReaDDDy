@@ -17,9 +17,6 @@ public class OrderMealCommandhandler : ICommandHandler
 
     public IEnumerable<Event> Events(MealProjectedState state)
     {
-        if (state.State != OrderState.None)
-            throw new InvalidOperationException("Invalid command for state!");
-
         if (_command.Serving == Serving.paperbag && !_command.Table.IsEmpty)
             throw new InvalidOperationException("Invalid serving!");
 

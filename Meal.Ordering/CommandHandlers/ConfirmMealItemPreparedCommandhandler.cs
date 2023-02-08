@@ -14,9 +14,6 @@ public class ConfirmMealItemPreparedCommandhandler : ICommandHandler
 
     public IEnumerable<Event> Events(MealProjectedState state)
     {
-        if (state.State != OrderState.InPreparation)
-            throw new InvalidOperationException("Invalid command for state!");
-
         if (state.Items.Length <= _command.ItemIndex)
             throw new IndexOutOfRangeException("Invalid item index!");
 

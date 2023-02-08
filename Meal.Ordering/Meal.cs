@@ -65,6 +65,7 @@ public class Meal
 
     private void ApplyAndSave(ICommandHandler handler)
     {
+        MealCommandHandlers.CheckAllowedInState(handler.GetType(), _mealProjectedState.State);
         var eventList = handler.Events(_mealProjectedState).ToList();
         eventList.ForEach(Apply);
         _eventStore.Save(_id, eventList);
