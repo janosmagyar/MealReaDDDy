@@ -1,56 +1,13 @@
 using EventStore.Api;
 using Meal.Events;
 using Meal.Ordering.Api;
+using Meal.Ordering.EventHandlers;
 
 namespace Meal.Ordering;
 
-internal interface IEventHandler
-{
-    public MealProjectedState Apply(MealProjectedState state);
-}
 internal interface ICommandHandler
 {
     public IEnumerable<Event> Events(MealProjectedState state);
-}
-
-internal class MealOrderedEventHandler : IEventHandler
-{
-    private readonly MealOrdered _event;
-
-    public MealOrderedEventHandler(MealOrdered @event)
-    {
-        _event = @event;
-    }
-
-    public MealProjectedState Apply(MealProjectedState state)
-    {
-        return new MealProjectedState()
-        {
-            OrderNumber = _event.OrderNumber,
-            Table = _event.Table,
-            Items = _event.Items
-                .Select(i => new TrackedItem(i.Count, i.Name, Enum.Parse<Category>(i.Category)))
-                .ToArray(),
-            Serving = Enum.Parse<Serving>(_event.Serving),
-            State = OrderState.InPreparation,
-            Payment = PaymentState.Waiting,
-        };
-    }
-}
-internal class MealItemPreparedEventHandler : IEventHandler
-{
-    private readonly MealItemPrepared _event;
-
-    public MealItemPreparedEventHandler(MealItemPrepared @event)
-    {
-        _event = @event;
-    }
-
-    public MealProjectedState Apply(MealProjectedState state)
-    {
-        state.Items[_event.ItemIndex].PrepareOne();
-        return state;
-    }
 }
 
 public class Meal
@@ -94,22 +51,22 @@ public class Meal
                     _mealProjectedState = new MealItemPreparedEventHandler(mealItemPrepared).Apply(_mealProjectedState);
                     break;
                 case AllMealItemsPrepared allMealItemsPrepared:
-                    _mealProjectedState.State = OrderState.Ready;
+                    _mealProjectedState = new AllMealItemsPreparedEventHandler(allMealItemsPrepared).Apply(_mealProjectedState);
                     break;
                 case PaymentFailed paymentFailed:
-                    _mealProjectedState.Payment = PaymentState.Failed;
+                    _mealProjectedState = new PaymentFailedEventHandler(paymentFailed).Apply(_mealProjectedState);
                     break;
                 case PaymentSucceeded paymentSucceeded:
-                    _mealProjectedState.Payment = PaymentState.Successful;
+                    _mealProjectedState = new PaymentSucceededEventHandler(paymentSucceeded).Apply(_mealProjectedState);
                     break;
                 case MealPickedUp mealPickedUp:
-                    _mealProjectedState.State = OrderState.Done;
+                    _mealProjectedState = new PickedUpEventHandler(mealPickedUp).Apply(_mealProjectedState);
                     break;
                 case MealServedToTable mealServedToTable:
-                    _mealProjectedState.State = OrderState.Done;
+                    _mealProjectedState = new ServedTotTableEventHandler(mealServedToTable).Apply(_mealProjectedState);
                     break;
                 case MealTakenAway mealTakenAway:
-                    _mealProjectedState.State = OrderState.Done;
+                    _mealProjectedState = new TakenAwayEventHandler(mealTakenAway).Apply(_mealProjectedState);
                     break;
             }
         }
