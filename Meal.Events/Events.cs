@@ -23,4 +23,14 @@ namespace Meal.Events
     }
 
     public record AllMealItemsPrepared : Event;
+
+    public record PaymentFailed : Event;
+
+    public record PaymentSucceeded : Event;
+
+    public record MealTakenAway : Event;
+
+    public record MealServedToTable : Event;
+
+    public record MealPickedUp : Event;
 }

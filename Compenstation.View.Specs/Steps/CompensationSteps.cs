@@ -2,6 +2,8 @@ using System.Globalization;
 using Compensation.View;
 using Compenstation.View.Specs.Support;
 using EventStore.Api;
+using Meal.Events;
+using Meal.Ordering.Api;
 using NUnit.Framework;
 using TechTalk.SpecFlow;
 
@@ -49,7 +51,21 @@ public class CompensationSteps
     {
         _eventStore.Save(id, new Event[]
         {
-            //TODO: event
+            new MealOrdered
+            {
+                OrderNumber = 12,
+                Serving = Serving.paperbag.ToString(),
+                Table = null,
+                Items = new[]
+                {
+                    new Item
+                    {
+                        Category = Category.burger.ToString(),
+                        Count = 1,
+                        Name = "hamburger"
+                    }
+                }
+            }
         });
     }
 
@@ -64,7 +80,7 @@ public class CompensationSteps
     {
         _eventStore.Save(id, new Event[]
         {
-            //TODO: event
+            new AllMealItemsPrepared()
         });
     }
 

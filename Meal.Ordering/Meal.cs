@@ -58,6 +58,21 @@ public class Meal
                 case AllMealItemsPrepared allMealItemsPrepared:
                     _mealProjectedState.State = OrderState.Ready;
                     break;
+                case PaymentFailed paymentFailed:
+                    _mealProjectedState.Payment = PaymentState.Failed;
+                    break;
+                case PaymentSucceeded paymentSucceeded:
+                    _mealProjectedState.Payment = PaymentState.Successful;
+                    break;
+                case MealPickedUp mealPickedUp:
+                    _mealProjectedState.State = OrderState.Done;
+                    break;
+                case MealServedToTable mealServedToTable:
+                    _mealProjectedState.State = OrderState.Done;
+                    break;
+                case MealTakenAway mealTakenAway:
+                    _mealProjectedState.State = OrderState.Done;
+                    break;
             }
         }
     }
@@ -118,13 +133,59 @@ public class Meal
             });
     }
 
-    public void PaymentFailed() { }
+    public void PaymentFailed()
+    {
+        if (_mealProjectedState.Payment == PaymentState.Successful)
+            throw new InvalidOperationException("Payment was already successful!");
+        _eventStore.Save(_id, new[]
+        {
+            new PaymentFailed()
+        });
+    }
 
-    public void PaymentSucceeded() { }
+    public void PaymentSucceeded()
+    {
+        if (_mealProjectedState.Payment == PaymentState.Successful)
+            throw new InvalidOperationException("Payment was already successful!");
+        _eventStore.Save(_id, new[]
+        {
+            new PaymentSucceeded()
+        });
+    }
 
-    public void TakeAway() { }
+    public void TakeAway()
+    {
+        if (_mealProjectedState.Payment != PaymentState.Successful)
+            throw new InvalidOperationException("Payment wasn't successful!");
+        if (_mealProjectedState.Serving != Serving.paperbag)
+            throw new InvalidOperationException("Wrong serving!");
+        _eventStore.Save(_id, new[]
+        {
+            new MealTakenAway()
+        });
+    }
 
-    public void PickUp() { }
+    public void PickUp()
+    {
+        if (_mealProjectedState.Payment != PaymentState.Successful)
+            throw new InvalidOperationException("Payment wasn't successful!");
+        if (_mealProjectedState.Serving != Serving.tray || !_mealProjectedState.Table.IsEmpty)
+            throw new InvalidOperationException("Wrong serving!");
+        _eventStore.Save(_id, new[]
+        {
+            new MealPickedUp()
+        });
+    }
 
-    public void ServeToTable() { }
+    public void ServeToTable()
+    {
+        if (_mealProjectedState.Payment != PaymentState.Successful)
+            throw new InvalidOperationException("Payment wasn't successful!");
+        if (_mealProjectedState.Serving != Serving.tray || _mealProjectedState.Table.IsEmpty)
+            throw new InvalidOperationException("Wrong serving!");
+        _eventStore.Save(_id, new[]
+        {
+            new MealServedToTable()
+        });
+    }
 }
