@@ -4,6 +4,55 @@ using Meal.Ordering.Api;
 
 namespace Meal.Ordering;
 
+internal interface IEventHandler
+{
+    public MealProjectedState Apply(MealProjectedState state);
+}
+internal interface ICommandHandler
+{
+    public IEnumerable<Event> Events(MealProjectedState state);
+}
+
+internal class MealOrderedEventHandler : IEventHandler
+{
+    private readonly MealOrdered _event;
+
+    public MealOrderedEventHandler(MealOrdered @event)
+    {
+        _event = @event;
+    }
+
+    public MealProjectedState Apply(MealProjectedState state)
+    {
+        return new MealProjectedState()
+        {
+            OrderNumber = _event.OrderNumber,
+            Table = _event.Table,
+            Items = _event.Items
+                .Select(i => new TrackedItem(i.Count, i.Name, Enum.Parse<Category>(i.Category)))
+                .ToArray(),
+            Serving = Enum.Parse<Serving>(_event.Serving),
+            State = OrderState.InPreparation,
+            Payment = PaymentState.Waiting,
+        };
+    }
+}
+internal class MealItemPreparedEventHandler : IEventHandler
+{
+    private readonly MealItemPrepared _event;
+
+    public MealItemPreparedEventHandler(MealItemPrepared @event)
+    {
+        _event = @event;
+    }
+
+    public MealProjectedState Apply(MealProjectedState state)
+    {
+        state.Items[_event.ItemIndex].PrepareOne();
+        return state;
+    }
+}
+
 public class Meal
 {
     private readonly IEventStore _eventStore;
@@ -39,21 +88,10 @@ public class Meal
             switch (persistedEvent.Event)
             {
                 case MealOrdered mealOrdered:
-                    _mealProjectedState.OrderNumber = mealOrdered.OrderNumber;
-                    _mealProjectedState.Table = mealOrdered.Table;
-                    _mealProjectedState.Serving = Enum.Parse<Serving>(mealOrdered.Serving);
-                    _mealProjectedState.Items = mealOrdered.Items
-                        .Select(i => new TrackedItem(
-                            i.Count,
-                            i.Name,
-                            Enum.Parse<Category>(i.Category)))
-                        .ToArray();
-
-                    _mealProjectedState.State = OrderState.InPreparation;
-                    _mealProjectedState.Payment = PaymentState.Waiting;
+                    _mealProjectedState = new MealOrderedEventHandler(mealOrdered).Apply(_mealProjectedState);
                     break;
                 case MealItemPrepared mealItemPrepared:
-                    _mealProjectedState.Items[mealItemPrepared.ItemIndex].PrepareOne();
+                    _mealProjectedState = new MealItemPreparedEventHandler(mealItemPrepared).Apply(_mealProjectedState);
                     break;
                 case AllMealItemsPrepared allMealItemsPrepared:
                     _mealProjectedState.State = OrderState.Ready;
