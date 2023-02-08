@@ -10,6 +10,28 @@ internal interface ICommandHandler
     public IEnumerable<Event> Events(MealProjectedState state);
 }
 
+internal static class MealEventHandlers
+{
+    private static readonly Dictionary<Type, Func<Event, IEventHandler>> EventHandlers = new()
+    {
+        {typeof(MealOrdered), (e)=> new MealOrderedEventHandler((e as MealOrdered)!)},
+        {typeof(MealItemPrepared), (e)=> new MealItemPreparedEventHandler((e as MealItemPrepared)!)},
+        {typeof(AllMealItemsPrepared), (e)=> new AllMealItemsPreparedEventHandler((e as AllMealItemsPrepared)!)},
+        {typeof(PaymentFailed), (e)=> new PaymentFailedEventHandler((e as PaymentFailed)!)},
+        {typeof(PaymentSucceeded), (e)=> new PaymentSucceededEventHandler((e as PaymentSucceeded)!)},
+        {typeof(MealTakenAway), (e)=> new TakenAwayEventHandler((e as MealTakenAway)!)},
+        {typeof(MealPickedUp), (e)=> new PickedUpEventHandler((e as MealPickedUp)!)},
+        {typeof(MealServedToTable), (e)=> new ServedTotTableEventHandler((e as MealServedToTable)!)},
+    };
+
+    public static IEventHandler Create(Event e)
+    {
+        if (EventHandlers.ContainsKey(e.GetType()))
+            return EventHandlers[e.GetType()].Invoke(e);
+        throw new ArgumentException($"Unknow event type! ({e.GetType().FullName})");
+    }
+}
+
 public class Meal
 {
     private readonly IEventStore _eventStore;
@@ -45,32 +67,7 @@ public class Meal
     }
 
     private void Apply(Event @event) =>
-        _mealProjectedState = CreateHandler(@event).Apply(_mealProjectedState);
-
-    private IEventHandler CreateHandler(Event @event)
-    {
-        switch (@event)
-        {
-            case MealOrdered mealOrdered:
-                return new MealOrderedEventHandler(mealOrdered);
-            case MealItemPrepared mealItemPrepared:
-                return new MealItemPreparedEventHandler(mealItemPrepared);
-            case AllMealItemsPrepared allMealItemsPrepared:
-                return new AllMealItemsPreparedEventHandler(allMealItemsPrepared);
-            case PaymentFailed paymentFailed:
-                return new PaymentFailedEventHandler(paymentFailed);
-            case PaymentSucceeded paymentSucceeded:
-                return new PaymentSucceededEventHandler(paymentSucceeded);
-            case MealPickedUp mealPickedUp:
-                return new PickedUpEventHandler(mealPickedUp);
-            case MealServedToTable mealServedToTable:
-                return new ServedTotTableEventHandler(mealServedToTable);
-            case MealTakenAway mealTakenAway:
-                return new TakenAwayEventHandler(mealTakenAway);
-            default:
-                throw new ArgumentException($"Unknow event type! ({@event.GetType().FullName})");
-        }
-    }
+        _mealProjectedState = MealEventHandlers.Create(@event).Apply(_mealProjectedState);
 
     public void Order(OrderMealCommand command, IOrderNumberGenerator orderNumberGenerator)
     {
