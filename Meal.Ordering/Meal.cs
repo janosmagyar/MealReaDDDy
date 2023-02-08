@@ -43,29 +43,29 @@ public class Meal
         _mealProjectedState = MealEventHandlers.Create(@event).Apply(_mealProjectedState);
 
     public void Order(OrderMealCommand command, IOrderNumberGenerator orderNumberGenerator)
-        => ApplyAndSave(new OrderMealCommandhandler(command, orderNumberGenerator).Events(_mealProjectedState));
+        => ApplyAndSave(new OrderMealCommandhandler(command, orderNumberGenerator));
 
     public void ConfirmItemPrepared(ConfirmMealItemPreparedCommand command)
-        => ApplyAndSave(new ConfirmMealItemPreparedCommandhandler(command).Events(_mealProjectedState));
+        => ApplyAndSave(new ConfirmMealItemPreparedCommandhandler(command));
 
     public void PaymentFailed()
-        => ApplyAndSave(new PaymentFailedCommandhandler().Events(_mealProjectedState));
+        => ApplyAndSave(new PaymentFailedCommandhandler());
 
     public void PaymentSucceeded()
-        => ApplyAndSave(new PaymentSucceededCommandhandler().Events(_mealProjectedState));
+        => ApplyAndSave(new PaymentSucceededCommandhandler());
 
     public void TakeAway()
-        => ApplyAndSave(new TakeAwayMealCommandhandler().Events(_mealProjectedState));
+        => ApplyAndSave(new TakeAwayMealCommandhandler());
 
     public void PickUp()
-        => ApplyAndSave(new PickUpMealCommandhandler().Events(_mealProjectedState));
+        => ApplyAndSave(new PickUpMealCommandhandler());
 
     public void ServeToTable()
-        => ApplyAndSave(new ServeMealToTableCommandhandler().Events(_mealProjectedState));
+        => ApplyAndSave(new ServeMealToTableCommandhandler());
 
-    private void ApplyAndSave(IEnumerable<Event> events)
+    private void ApplyAndSave(ICommandHandler handler)
     {
-        var eventList = events.ToList();
+        var eventList = handler.Events(_mealProjectedState).ToList();
         eventList.ForEach(Apply);
         _eventStore.Save(_id, eventList);
     }
