@@ -1,4 +1,3 @@
-using EventStore.Api;
 using Meal.Events;
 using Meal.Ordering.Api;
 
@@ -15,7 +14,7 @@ public class OrderMealCommandhandler : ICommandHandler
         _orderNumberGenerator = orderNumberGenerator;
     }
 
-    public IEnumerable<Event> Events(MealProjectedState state)
+    public IEnumerable<object> Events(MealProjectedState state)
     {
         if (_command.Serving == Serving.paperbag && !_command.Table.IsEmpty)
             throw new InvalidOperationException("Invalid serving!");

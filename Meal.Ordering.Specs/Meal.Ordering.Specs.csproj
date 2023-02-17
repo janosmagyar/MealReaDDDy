@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\EventStore.InMemory\EventStore.InMemory.csproj" />
     <ProjectReference Include="..\Meal.Ordering.Api\Meal.Ordering.Api.csproj" />
+    <ProjectReference Include="..\Meal.Ordering.EventStoreRepository\Meal.Ordering.EventStoreRepository.csproj" />
     <ProjectReference Include="..\Meal.Ordering\Meal.Ordering.csproj" />
   </ItemGroup>
 

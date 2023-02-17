@@ -1,4 +1,4 @@
-﻿using EventStore.Api;
+using EventStore.Api;
 
 namespace EventStore.InMemory;
 
@@ -16,7 +16,7 @@ public class InMemoryEventStore : IEventStore
 
     public void Save(
         StreamId streamId,
-        IReadOnlyList<Event> events)
+        IReadOnlyList<object> events)
     {
         lock (_events) SaveInternal(streamId, events);
     }
@@ -24,7 +24,7 @@ public class InMemoryEventStore : IEventStore
     public void Save(
         StreamId streamId,
         StreamRevision revision,
-        IReadOnlyList<Event> events)
+        IReadOnlyList<object> events)
     {
         lock (_events)
         {
@@ -47,14 +47,14 @@ public class InMemoryEventStore : IEventStore
 
     private void SaveInternal(
         StreamId streamId,
-        IEnumerable<Event> events)
+        IEnumerable<object> events)
     {
         foreach (var @event in events)
         {
             var e = new PersistedEvent()
             {
                 StreamId = streamId,
-                Event = @event with { },
+                Event = @event,
                 CreatedUtc = _clock.UtcNow,
                 GlobalPosition = _events.LongCount(),
                 StreamPosition = _events.LongCount(e => e.StreamId == streamId),

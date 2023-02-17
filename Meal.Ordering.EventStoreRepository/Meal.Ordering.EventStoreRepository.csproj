@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\EventStore.Api\EventStore.Api.csproj" />
+    <ProjectReference Include="..\Meal.Ordering\Meal.Ordering.csproj" />
+  </ItemGroup>
+
 </Project>

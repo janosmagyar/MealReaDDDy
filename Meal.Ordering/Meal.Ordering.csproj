@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EventStore.Api\EventStore.Api.csproj" />
     <ProjectReference Include="..\Meal.Events\Meal.Events.csproj" />
     <ProjectReference Include="..\Meal.Ordering.Api\Meal.Ordering.Api.csproj" />
   </ItemGroup>

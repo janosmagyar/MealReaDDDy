@@ -17,9 +17,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meal.Ordering.Api", "Meal.O
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Meal.Ordering.Specs", "Meal.Ordering.Specs\Meal.Ordering.Specs.csproj", "{31DF73BC-532B-48A4-B818-40D0CBCC7E19}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compensation.View", "Compensation.View\Compensation.View.csproj", "{53CBC336-C8D3-4D5A-BB6A-8D6F660302B3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compensation.View", "Compensation.View\Compensation.View.csproj", "{53CBC336-C8D3-4D5A-BB6A-8D6F660302B3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compenstation.View.Specs", "Compenstation.View.Specs\Compenstation.View.Specs.csproj", "{A1422065-DBAE-47C4-930A-75C8062DA780}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compenstation.View.Specs", "Compenstation.View.Specs\Compenstation.View.Specs.csproj", "{A1422065-DBAE-47C4-930A-75C8062DA780}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meal.Ordering.EventStoreRepository", "Meal.Ordering.EventStoreRepository\Meal.Ordering.EventStoreRepository.csproj", "{4D87A67D-7D7B-4553-9F5C-B168FA5F8E2E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +65,10 @@ Global
 		{A1422065-DBAE-47C4-930A-75C8062DA780}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1422065-DBAE-47C4-930A-75C8062DA780}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1422065-DBAE-47C4-930A-75C8062DA780}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D87A67D-7D7B-4553-9F5C-B168FA5F8E2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D87A67D-7D7B-4553-9F5C-B168FA5F8E2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D87A67D-7D7B-4553-9F5C-B168FA5F8E2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D87A67D-7D7B-4553-9F5C-B168FA5F8E2E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

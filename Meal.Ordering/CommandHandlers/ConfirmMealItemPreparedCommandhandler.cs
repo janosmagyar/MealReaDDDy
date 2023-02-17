@@ -1,4 +1,3 @@
-using EventStore.Api;
 using Meal.Events;
 using Meal.Ordering.Api;
 
@@ -12,7 +11,7 @@ public class ConfirmMealItemPreparedCommandhandler : ICommandHandler
         _command = command;
     }
 
-    public IEnumerable<Event> Events(MealProjectedState state)
+    public IEnumerable<object> Events(MealProjectedState state)
     {
         if (state.Items.Length <= _command.ItemIndex)
             throw new IndexOutOfRangeException("Invalid item index!");

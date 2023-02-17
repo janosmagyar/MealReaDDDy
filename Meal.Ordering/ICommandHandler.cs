@@ -1,8 +1,6 @@
-using EventStore.Api;
-
 namespace Meal.Ordering;
 
 internal interface ICommandHandler
 {
-    public IEnumerable<Event> Events(MealProjectedState state);
+    public IEnumerable<object> Events(MealProjectedState state);
 }

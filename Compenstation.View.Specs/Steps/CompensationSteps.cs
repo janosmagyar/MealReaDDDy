@@ -49,7 +49,7 @@ public class CompensationSteps
     [Given(@"a meal ordered with id '([^']*)'")]
     public void GivenAMealOrderedToTakeAwayWithId(string id)
     {
-        _eventStore.Save(id, new Event[]
+        _eventStore.Save(id, new object[]
         {
             new MealOrdered
             {
@@ -78,7 +78,7 @@ public class CompensationSteps
     [Given(@"a meal is ready with id '([^']*)'")]
     public void GivenAMealIsReadyWithId(string id)
     {
-        _eventStore.Save(id, new Event[]
+        _eventStore.Save(id, new object[]
         {
             new AllMealItemsPrepared()
         });

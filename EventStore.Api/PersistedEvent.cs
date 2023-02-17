@@ -1,4 +1,4 @@
-﻿namespace EventStore.Api;
+namespace EventStore.Api;
 
 public record PersistedEvent
 {
@@ -6,5 +6,5 @@ public record PersistedEvent
     public required StreamPosition StreamPosition { get; init; }
     public required DateTime CreatedUtc { get; init; }
     public required StreamId StreamId { get; init; }
-    public required Event Event { get; init; }
+    public required object Event { get; init; }
 }

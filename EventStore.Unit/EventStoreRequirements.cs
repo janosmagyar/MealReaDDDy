@@ -1,4 +1,4 @@
-﻿using DeepEqual.Syntax;
+using DeepEqual.Syntax;
 using NUnit.Framework;
 using EventStore.Api;
 
@@ -22,7 +22,7 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
         var eventStore = EventStore();
         var streamId = new StreamId();
 
-        Assert.DoesNotThrow(() => eventStore.Save(streamId, Array.Empty<Event>()));
+        Assert.DoesNotThrow(() => eventStore.Save(streamId, Array.Empty<object>()));
         Assert.That(eventStore.AllEvents(), Is.Empty);
         Assert.That(eventStore.Events(streamId), Is.Empty);
     }
@@ -33,7 +33,7 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
         var eventStore = EventStore();
         var streamId = new StreamId();
 
-        Assert.DoesNotThrow(() => eventStore.Save(streamId, StreamRevision.NotExists, Array.Empty<Event>()));
+        Assert.DoesNotThrow(() => eventStore.Save(streamId, StreamRevision.NotExists, Array.Empty<object>()));
 
         Assert.That(eventStore.AllEvents(), Is.Empty);
         Assert.That(eventStore.Events(streamId), Is.Empty);
@@ -46,7 +46,7 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
         var e = TestEvent();
         var streamId = new StreamId();
 
-        eventStore.Save(streamId, new Event[] { e });
+        eventStore.Save(streamId, new object[] { e });
 
         var events = eventStore.Events(streamId);
 
@@ -61,7 +61,7 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
         var e2 = new TestEvent("god yzal revo spmuj xof nworb eht");
         var streamId = new StreamId();
 
-        eventStore.Save(streamId, new Event[] { e1, e2 });
+        eventStore.Save(streamId, new object[] { e1, e2 });
 
         var events = eventStore.Events(streamId).ToArray();
 
@@ -78,7 +78,7 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
 
         var time = _clock.UtcNow;
 
-        eventStore.Save(streamId, new Event[] { e });
+        eventStore.Save(streamId, new object[] { e });
 
         var events = eventStore.Events(streamId);
 
@@ -92,7 +92,7 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
         var e = TestEvent();
         var streamId = new StreamId();
 
-        eventStore.Save(streamId, new Event[] { e, e, e, e });
+        eventStore.Save(streamId, new object[] { e, e, e, e });
 
         var events = eventStore.Events(streamId).ToArray();
 
@@ -109,10 +109,10 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
         var e = TestEvent();
         var streamId = new StreamId();
 
-        eventStore.Save(streamId, new Event[] { e });
-        eventStore.Save(streamId, new Event[] { e });
-        eventStore.Save(streamId, new Event[] { e });
-        eventStore.Save(streamId, new Event[] { e });
+        eventStore.Save(streamId, new object[] { e });
+        eventStore.Save(streamId, new object[] { e });
+        eventStore.Save(streamId, new object[] { e });
+        eventStore.Save(streamId, new object[] { e });
 
         var events = eventStore.Events(streamId).ToArray();
 
@@ -130,10 +130,10 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
         var streamId1 = new StreamId();
         var streamId2 = new StreamId();
 
-        eventStore.Save(streamId1, new Event[] { e });
-        eventStore.Save(streamId2, new Event[] { e });
-        eventStore.Save(streamId1, new Event[] { e });
-        eventStore.Save(streamId2, new Event[] { e });
+        eventStore.Save(streamId1, new object[] { e });
+        eventStore.Save(streamId2, new object[] { e });
+        eventStore.Save(streamId1, new object[] { e });
+        eventStore.Save(streamId2, new object[] { e });
 
         foreach (var pair in eventStore.AllEvents().Skip(1).Zip(eventStore.AllEvents()))
         {
@@ -148,11 +148,11 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
         var e = TestEvent();
         var streamId = new StreamId();
 
-        Assert.DoesNotThrow(() => eventStore.Save(streamId, StreamRevision.NotExists, new Event[] { e }));
-        Assert.DoesNotThrow(() => eventStore.Save(streamId, 0, new Event[] { e }));
-        Assert.DoesNotThrow(() => eventStore.Save(streamId, 1, new Event[] { e, e }));
-        Assert.DoesNotThrow(() => eventStore.Save(streamId, 3, new Event[] { e }));
-        Assert.DoesNotThrow(() => eventStore.Save(streamId, 4, new Event[] { e }));
+        Assert.DoesNotThrow(() => eventStore.Save(streamId, StreamRevision.NotExists, new object[] { e }));
+        Assert.DoesNotThrow(() => eventStore.Save(streamId, 0, new object[] { e }));
+        Assert.DoesNotThrow(() => eventStore.Save(streamId, 1, new object[] { e, e }));
+        Assert.DoesNotThrow(() => eventStore.Save(streamId, 3, new object[] { e }));
+        Assert.DoesNotThrow(() => eventStore.Save(streamId, 4, new object[] { e }));
     }
 
     [Test]
@@ -162,7 +162,7 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
         var e = TestEvent();
         var streamId = new StreamId();
 
-        var ex = Assert.Throws<EventStoreException>(() => eventStore.Save(streamId, 1234543, new Event[] { e }));
+        var ex = Assert.Throws<EventStoreException>(() => eventStore.Save(streamId, 1234543, new object[] { e }));
         Assert.That(ex!.Message, Is.EqualTo($"Stream not exists! ({streamId})"));
     }
 
@@ -172,9 +172,9 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
         var eventStore = EventStore();
         var e = TestEvent();
         var streamId = new StreamId();
-        eventStore.Save(streamId, StreamRevision.NotExists, new Event[] { e });
+        eventStore.Save(streamId, StreamRevision.NotExists, new object[] { e });
 
-        var ex = Assert.Throws<EventStoreException>(() => eventStore.Save(streamId, StreamRevision.NotExists, new Event[] { e }));
+        var ex = Assert.Throws<EventStoreException>(() => eventStore.Save(streamId, StreamRevision.NotExists, new object[] { e }));
         Assert.That(ex!.Message, Is.EqualTo($"Stream already exists! ({streamId})"));
     }
 
@@ -185,9 +185,9 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
         var e = TestEvent();
         var streamId = new StreamId();
 
-        eventStore.Save(streamId, StreamRevision.NotExists, new Event[] { e, e, e, e, e });
+        eventStore.Save(streamId, StreamRevision.NotExists, new object[] { e, e, e, e, e });
 
-        var ex = Assert.Throws<EventStoreException>(() => eventStore.Save(streamId, 2, new Event[] { e }));
+        var ex = Assert.Throws<EventStoreException>(() => eventStore.Save(streamId, 2, new object[] { e }));
         Assert.That(ex!.Message, Is.EqualTo($"Stream modified! ({streamId}, current rev.: 4, wanted rev.: 2)"));
     }
 

@@ -1,16 +1,16 @@
-using EventStore.Api;
 using Meal.Ordering.Api;
 using Meal.Ordering.CommandHandlers;
 
 namespace Meal.Ordering;
 
-
 public class Meal
 {
-    private readonly IEventStore _eventStore;
-    private readonly string _id;
+    private readonly List<object> _newEvents = new();
     private MealProjectedState _mealProjectedState;
-    private readonly StreamRevision _revision = StreamRevision.NotExists;
+
+    public ulong Revision { get; init; }
+    public string Id { get; init; }
+    public IReadOnlyList<object> NewEvents => _newEvents;
 
     public MealPublicState MealPublicState => new()
     {
@@ -28,23 +28,16 @@ public class Meal
             .ToArray(),
     };
 
-    public Meal(IEventStore eventStore, string id) : this(eventStore, id, new())
+    public Meal(string id, IEnumerable<object> events, MealProjectedState? state, ulong revision)
     {
+        _mealProjectedState = state ?? new MealProjectedState();
+        Id = id;
+        Revision = revision;
+        foreach (var @event in events ?? Array.Empty<object>())
+            Apply(@event);
     }
 
-    public Meal(IEventStore eventStore, string id, MealProjectedState state)
-    {
-        _mealProjectedState = state;
-        _eventStore = eventStore;
-        _id = id;
-        foreach (var persistedEvent in eventStore.Events(id))
-        {
-            Apply(persistedEvent.Event);
-            _revision = persistedEvent.StreamPosition;
-        }
-    }
-
-    private void Apply(Event @event) =>
+    private void Apply(object @event) =>
         _mealProjectedState = MealEventHandlers.Create(@event).Apply(_mealProjectedState);
 
     public void Order(OrderMealCommand command, IOrderNumberGenerator orderNumberGenerator)
@@ -73,6 +66,6 @@ public class Meal
         MealCommandHandlers.CheckAllowedInState(handler.GetType(), _mealProjectedState.State);
         var eventList = handler.Events(_mealProjectedState).ToList();
         eventList.ForEach(Apply);
-        _eventStore.Save(_id, _revision, eventList);
+        _newEvents.AddRange(eventList);
     }
 }

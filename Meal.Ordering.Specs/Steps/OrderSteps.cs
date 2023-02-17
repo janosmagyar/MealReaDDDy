@@ -1,5 +1,6 @@
 using EventStore.Api;
 using Meal.Ordering.Api;
+using Meal.Ordering.EventStoreRepository;
 using Meal.Ordering.Specs.Support;
 using NUnit.Framework;
 using TechTalk.SpecFlow;
@@ -11,22 +12,34 @@ namespace Meal.Ordering.Specs.Steps;
 public class OrderSteps
 {
     private readonly ExceptionContext _exceptionContext;
-    private readonly IEventStore _eventStore;
     private readonly string _id = Guid.NewGuid().ToString("N");
     private IOrderNumberGenerator _orderNumberGenerator;
+    private readonly EventStoreMealRepository _repository;
     private OrderMealCommand? _orderMealCommand;
     private MealProjectedState _startState = new();
-    private Meal CreateNewMealFromStartState() => new(_eventStore, _id, new(_startState));
+    private Meal _meal;
 
     public OrderSteps(
         ExceptionContext exceptionContext,
-        IEventStore eventStore,
-        IOrderNumberGenerator orderNumberGenerator
+        IOrderNumberGenerator orderNumberGenerator,
+        EventStoreMealRepository repository
         )
     {
         _exceptionContext = exceptionContext;
-        _eventStore = eventStore;
         _orderNumberGenerator = orderNumberGenerator;
+        _repository = repository;
+    }
+
+    [BeforeStep()]
+    public void BeforeStep()
+    {
+        _meal = _repository.GetOrCreate(_id, new MealProjectedState(_startState));
+    }
+
+    [AfterStep()]
+    public void AfterStep()
+    {
+        _repository.Update(_meal);
     }
 
     [Given(@"the order to take away")]
@@ -79,73 +92,69 @@ public class OrderSteps
     [When(@"payment failed")]
     public void WhenPaymentFailed()
     {
-        _exceptionContext.SaveExceptionIfError(() => CreateNewMealFromStartState().PaymentFailed());
+        _exceptionContext.SaveExceptionIfError(() => _meal.PaymentFailed());
     }
 
     [When(@"payment succeeded")]
     public void WhenPaymentSucceeded()
     {
-        _exceptionContext.SaveExceptionIfError(() => CreateNewMealFromStartState().PaymentSucceeded());
+        _exceptionContext.SaveExceptionIfError(() => _meal.PaymentSucceeded());
     }
 
     [When(@"expeditor confirms that one piece from '([^']*)' item is prepared")]
     public void WhenExpeditorConfirmsThatOnePieceFromItemIsPrepared(ItemIndex itemIndex)
     {
         _exceptionContext.SaveExceptionIfError(() =>
-            CreateNewMealFromStartState().ConfirmItemPrepared(new ConfirmMealItemPreparedCommand(itemIndex)));
+            _meal.ConfirmItemPrepared(new ConfirmMealItemPreparedCommand(itemIndex)));
     }
 
     [When(@"the customer place the order")]
     public void WhenTheCustomerPlaceTheOrder()
     {
         _exceptionContext.SaveExceptionIfError(() =>
-            new Meal(_eventStore, _id)
-                .Order(_orderMealCommand!, _orderNumberGenerator!));
+           _meal.Order(_orderMealCommand!, _orderNumberGenerator!));
     }
 
     [When(@"customer takes the order")]
     public void WhenCustomerTakesTheOrder()
     {
         _exceptionContext.SaveExceptionIfError(() =>
-            CreateNewMealFromStartState().TakeAway());
+            _meal.TakeAway());
     }
 
     [When(@"customer pickes up the order")]
     public void WhenCustomerPickesUpTheOrder()
     {
         _exceptionContext.SaveExceptionIfError(() =>
-            CreateNewMealFromStartState().PickUp());
+            _meal.PickUp());
     }
 
     [When(@"expeditor serves the meal to the table")]
     public void WhenExpeditorServesTheMealToTheTable()
     {
         _exceptionContext.SaveExceptionIfError(() =>
-            CreateNewMealFromStartState().ServeToTable());
+            _meal.ServeToTable());
     }
 
     [Then(@"then the order payment is '([^']*)'")]
     public void ThenThenTheOrderPaymentIs(PaymentState expectedState)
     {
-        var meal = CreateNewMealFromStartState();
-        Assert.That(meal.MealPublicState.Payment, Is.EqualTo(expectedState));
+        Assert.That(_meal.MealPublicState.Payment, Is.EqualTo(expectedState));
     }
 
     [Then(@"the order")]
     private void ThenTheOrder(PartialMealState s)
     {
-        var meal = CreateNewMealFromStartState();
-        Assert.That(meal.MealPublicState.State, Is.EqualTo(s.State));
-        Assert.That(meal.MealPublicState.Table, Is.EqualTo(s.Table));
-        Assert.That(meal.MealPublicState.Serving, Is.EqualTo(s.Serving));
-        Assert.That(meal.MealPublicState.OrderNumber, Is.EqualTo(s.OrderNumber));
+        Assert.That(_meal.MealPublicState.State, Is.EqualTo(s.State));
+        Assert.That(_meal.MealPublicState.Table, Is.EqualTo(s.Table));
+        Assert.That(_meal.MealPublicState.Serving, Is.EqualTo(s.Serving));
+        Assert.That(_meal.MealPublicState.OrderNumber, Is.EqualTo(s.OrderNumber));
     }
 
     [Then(@"the items in the order are")]
     public void ThenTheItemsInTheOrderAre(OrderedItem[] expectedItems)
     {
-        var meal = CreateNewMealFromStartState();
-        Assert.That(meal.MealPublicState.Items, Is.EquivalentTo(expectedItems));
+        Assert.That(_meal.MealPublicState.Items, Is.EquivalentTo(expectedItems));
     }
 
     [StepArgumentTransformation]
@@ -187,7 +196,7 @@ public class OrderSteps
     public OrderNumber OrderNumber(string value) => new(int.Parse(value));
 
     [StepArgumentTransformation]
-    public ItemIndex ItemIndex(string value) => new(int.Parse(value.Substring(0,value.Length-2))-1);
+    public ItemIndex ItemIndex(string value) => new(int.Parse(value.Substring(0, value.Length - 2)) - 1);
 
     [StepArgumentTransformation]
     private PartialMealState PartialMealStateTransformation(Table table) => table.CreateInstance<PartialMealState>();

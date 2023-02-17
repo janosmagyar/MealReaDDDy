@@ -3,11 +3,11 @@ using Meal.Ordering.Api;
 
 namespace Meal.Ordering.EventHandlers;
 
-internal class ServedTotTableEventHandler : IEventHandler
+internal class ServedToTableEventHandler : IEventHandler
 {
     private readonly MealServedToTable _event;
 
-    public ServedTotTableEventHandler(MealServedToTable @event)
+    public ServedToTableEventHandler(MealServedToTable @event)
     {
         _event = @event;
     }
