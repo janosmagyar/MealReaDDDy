@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EventStore.Api\EventStore.Api.csproj" />
+    <ProjectReference Include="..\EventStore.EventStoreDB\EventStore.EventStoreDB.csproj" />
     <ProjectReference Include="..\EventStore.InMemory\EventStore.InMemory.csproj" />
   </ItemGroup>
 

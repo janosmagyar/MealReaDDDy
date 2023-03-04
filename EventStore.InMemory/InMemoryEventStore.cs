@@ -56,7 +56,7 @@ public class InMemoryEventStore : IEventStore
                 StreamId = streamId,
                 Event = @event,
                 CreatedUtc = _clock.UtcNow,
-                GlobalPosition = _events.LongCount(),
+                GlobalPosition = _events.LongCount()+1,
                 StreamPosition = _events.LongCount(e => e.StreamId == streamId),
             };
             _events.Add(e);

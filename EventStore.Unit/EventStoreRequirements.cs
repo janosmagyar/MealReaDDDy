@@ -1,10 +1,14 @@
 using DeepEqual.Syntax;
 using NUnit.Framework;
 using EventStore.Api;
+using EventStore.Client;
+using StreamPosition = EventStore.Api.StreamPosition;
+using StreamRevision = EventStore.Api.StreamRevision;
 
 namespace EventStore.Unit;
 
 [TestFixture(typeof(InMemoryEventStoreFactory))]
+[TestFixture(typeof(EventStoreDbEventStoreFactory))]
 public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory : IEventStoreFactory, new()
 {
     private readonly IClock _clock = new TestClock().Set(new DateTime(2022, 11, 28, 16, 14, 59, DateTimeKind.Utc));
@@ -23,7 +27,6 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
         var streamId = new StreamId();
 
         Assert.DoesNotThrow(() => eventStore.Save(streamId, Array.Empty<object>()));
-        Assert.That(eventStore.AllEvents(), Is.Empty);
         Assert.That(eventStore.Events(streamId), Is.Empty);
     }
 
@@ -34,8 +37,6 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
         var streamId = new StreamId();
 
         Assert.DoesNotThrow(() => eventStore.Save(streamId, StreamRevision.NotExists, Array.Empty<object>()));
-
-        Assert.That(eventStore.AllEvents(), Is.Empty);
         Assert.That(eventStore.Events(streamId), Is.Empty);
     }
 
@@ -174,7 +175,8 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
         var streamId = new StreamId();
         eventStore.Save(streamId, StreamRevision.NotExists, new object[] { e });
 
-        var ex = Assert.Throws<EventStoreException>(() => eventStore.Save(streamId, StreamRevision.NotExists, new object[] { e }));
+        var ex = Assert.Throws<EventStoreException>(() =>
+            eventStore.Save(streamId, StreamRevision.NotExists, new object[] { e }));
         Assert.That(ex!.Message, Is.EqualTo($"Stream already exists! ({streamId})"));
     }
 
@@ -221,28 +223,44 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
     {
         var eventStore = EventStore();
         var streamId = new StreamId();
+        var lastEventPositionBeforeSave = eventStore
+            .AllEvents()
+            .DefaultIfEmpty(DefaultEvent())
+            .Last()
+            .GlobalPosition;
+
         eventStore.Save(
             streamId,
             Enumerable.Repeat(TestEvent(), 1000).ToList());
-
 
         var consumer1 = new TestEventCountingConsumer();
         var consumer2 = new TestEventCountingConsumer();
 
         var tokenSource = new CancellationTokenSource();
 
-        tokenSource.CancelAfter(200);
+        tokenSource.CancelAfter(300);
 
-        var task1 = eventStore.SubscribeAll(GlobalPosition.Start, consumer1.Consume, tokenSource.Token);
-        var task2 = eventStore.SubscribeAll(GlobalPosition.Start, consumer2.Consume, tokenSource.Token);
+        eventStore.SubscribeAll(lastEventPositionBeforeSave, consumer1.Consume, tokenSource.Token);
+        eventStore.SubscribeAll(lastEventPositionBeforeSave, consumer2.Consume, tokenSource.Token);
 
         eventStore.Save(new StreamId(), new[] { new TestEvent("123") });
 
-        task1.Wait(300);
-        task2.Wait(300);
+        Task.Delay(500).Wait();
 
         Assert.That(consumer1.EventCount, Is.EqualTo(1001));
         Assert.That(consumer2.EventCount, Is.EqualTo(1001));
+    }
+
+    private static PersistedEvent DefaultEvent()
+    {
+        return new PersistedEvent()
+        {
+            GlobalPosition = GlobalPosition.Start,
+            Event = null,
+            StreamId = new StreamId(),
+            CreatedUtc = DateTime.UtcNow,
+            StreamPosition = new StreamPosition(0UL)
+        };
     }
 
     [Test]
@@ -250,10 +268,34 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
     {
         var eventStore = EventStore();
         var streamId = new StreamId();
+
+        var lastEventPositionBeforeSave1 = eventStore
+            .AllEvents()
+            .DefaultIfEmpty(DefaultEvent())
+            .Last()
+            .GlobalPosition;
+
         eventStore.Save(
             streamId,
-            Enumerable.Repeat(TestEvent(), 1000).ToList());
+            new List<object>()
+            {
+                new TestEvent("check 12345"),
+                new TestEvent("check 67890"),
+            });
 
+        var lastEventPositionBeforeSave2 = eventStore
+            .AllEvents()
+            .DefaultIfEmpty(DefaultEvent())
+            .Last()
+            .GlobalPosition;
+
+        eventStore.Save(
+            streamId,
+            new List<object>()
+            {
+                new TestEvent("check apple"),
+                new TestEvent("check banana"),
+            });
 
         var consumer1 = new TestFirstEventConsumer();
         var consumer2 = new TestFirstEventConsumer();
@@ -262,20 +304,27 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
 
         tokenSource.CancelAfter(200);
 
-        var task1 = eventStore.SubscribeAll(673UL, consumer1.Consume, tokenSource.Token);
-        var task2 = eventStore.SubscribeAll(872UL, consumer2.Consume, tokenSource.Token);
+        eventStore.SubscribeAll(
+            new GlobalPosition(lastEventPositionBeforeSave1),
+            consumer1.Consume,
+            tokenSource.Token);
+        eventStore.SubscribeAll(
+            new GlobalPosition(lastEventPositionBeforeSave2),
+            consumer2.Consume,
+            tokenSource.Token);
 
-        task1.Wait(300);
-        task2.Wait(300);
+        Task.Delay(300).Wait();
 
-        Assert.That(consumer1.FirstGlobalPosition, Is.EqualTo(new GlobalPosition(673)));
-        Assert.That(consumer2.FirstGlobalPosition, Is.EqualTo(new GlobalPosition(872)));
-
+        Assert.That(consumer1.FirstGlobalPosition, Is.GreaterThan(new GlobalPosition(lastEventPositionBeforeSave1)));
+        Assert.That(consumer1.FirstComment, Is.EqualTo("check 12345"));
+        Assert.That(consumer2.FirstGlobalPosition, Is.GreaterThan(new GlobalPosition(lastEventPositionBeforeSave2)));
+        Assert.That(consumer2.FirstComment, Is.EqualTo("check apple"));
     }
 
     private class TestEventCountingConsumer
     {
         public ulong EventCount { get; private set; }
+
         public void Consume(PersistedEvent e)
         {
             EventCount++;
@@ -285,11 +334,19 @@ public class EventStoreRequirements<TEventStoreFactory> where TEventStoreFactory
     private class TestFirstEventConsumer
     {
         public GlobalPosition? FirstGlobalPosition { get; private set; }
+        public string? FirstComment { get; private set; }
+
         public void Consume(PersistedEvent e)
         {
-            if (FirstGlobalPosition.HasValue)
-                return;
-            FirstGlobalPosition = e.GlobalPosition;
+            switch (e.Event)
+            {
+                case TestEvent @event:
+                    if (FirstGlobalPosition.HasValue)
+                        return;
+                    FirstGlobalPosition = e.GlobalPosition;
+                    FirstComment = @event.Comment;
+                    break;
+            }
         }
     }
 }

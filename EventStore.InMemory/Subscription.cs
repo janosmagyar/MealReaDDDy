@@ -19,14 +19,14 @@ internal class Subscription
 
         while (true)
         {
-            var e = _events.FirstOrDefault(g => g.GlobalPosition == position);
+            var e = _events.FirstOrDefault(g => g.GlobalPosition == position.Next);
             if (e != null)
             {
                 eventAppeard.Invoke(e);
                 position = position.Next;
             }
             else
-                Thread.Sleep(100);
+                Task.Delay(50, cancellationToken).Wait(cancellationToken);
 
             if (cancellationToken.IsCancellationRequested)
                 return;

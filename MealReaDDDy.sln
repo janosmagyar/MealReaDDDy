@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compenstation.View.Specs", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meal.Ordering.EventStoreRepository", "Meal.Ordering.EventStoreRepository\Meal.Ordering.EventStoreRepository.csproj", "{4D87A67D-7D7B-4553-9F5C-B168FA5F8E2E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.EventStoreDB", "EventStore.EventStoreDB\EventStore.EventStoreDB.csproj", "{B4AB7D58-E2E1-43C0-8C37-BB7ECB98A5BF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,10 @@ Global
 		{4D87A67D-7D7B-4553-9F5C-B168FA5F8E2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D87A67D-7D7B-4553-9F5C-B168FA5F8E2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4D87A67D-7D7B-4553-9F5C-B168FA5F8E2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4AB7D58-E2E1-43C0-8C37-BB7ECB98A5BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4AB7D58-E2E1-43C0-8C37-BB7ECB98A5BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4AB7D58-E2E1-43C0-8C37-BB7ECB98A5BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4AB7D58-E2E1-43C0-8C37-BB7ECB98A5BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
