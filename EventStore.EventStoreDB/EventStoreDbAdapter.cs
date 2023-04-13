@@ -25,7 +25,7 @@ namespace EventStore.EventStoreDB
             var result = _client.ReadStreamAsync(Direction.Forwards, streamId, StreamPosition.Start);
             return result.ReadState.Result == ReadState.StreamNotFound
                 ? AsyncEnumerable.Empty<PersistedEvent>()
-                : _client.ReadStreamAsync(Direction.Forwards, streamId, StreamPosition.Start)
+                : result
                     .SelectAwait(resolvedEvent => new ValueTask<PersistedEvent>(Convert(resolvedEvent)));
         }
 
